@@ -64,10 +64,15 @@
             <div class="w-4 h-4 rounded-full bg-slate-200"></div>
         </div>
         <div class="grid grid-cols-3 gap-5 w-full max-w-xs">
-            <!-- 1-9 buttons -->
-            <script>
-                for(let i=1; i<=9; i++) document.write(`<button onclick="pressPin('${i}')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">${i}</button>`);
-            </script>
+            <button onclick="pressPin('1')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">1</button>
+            <button onclick="pressPin('2')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">2</button>
+            <button onclick="pressPin('3')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">3</button>
+            <button onclick="pressPin('4')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">4</button>
+            <button onclick="pressPin('5')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">5</button>
+            <button onclick="pressPin('6')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">6</button>
+            <button onclick="pressPin('7')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">7</button>
+            <button onclick="pressPin('8')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">8</button>
+            <button onclick="pressPin('9')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">9</button>
             <div class="h-16"></div>
             <button onclick="pressPin('0')" class="h-16 rounded-2xl bg-slate-50 active:bg-indigo-100 text-2xl font-black">0</button>
             <button onclick="deletePin()" class="h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center"><i data-lucide="delete"></i></button>
@@ -81,7 +86,7 @@
     <!-- Main App Content -->
     <div id="app-content" class="hidden max-w-md mx-auto min-h-screen bg-white shadow-2xl relative pb-24 overflow-hidden">
         
-        <!-- Views -->
+        <!-- View: Home -->
         <div id="view-home" class="p-6 space-y-8 animate-slideUp">
             <header class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
@@ -110,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Admin Panel (Conditional) -->
+            <!-- Admin Panel -->
             <div id="admin-panel" class="hidden bg-amber-50 p-6 rounded-3xl border border-amber-200">
                 <h3 class="text-amber-800 font-black text-sm mb-4 flex items-center gap-2"><i data-lucide="shield-check"></i> شحن الرصيد</h3>
                 <div class="space-y-3">
@@ -128,7 +133,7 @@
             </section>
         </div>
 
-        <!-- View Send -->
+        <!-- View: Send -->
         <div id="view-send" class="hidden p-6 space-y-6 animate-slideUp">
             <header class="flex items-center gap-4">
                 <button onclick="switchTab('home')" class="p-2 bg-slate-100 rounded-xl"><i data-lucide="chevron-right"></i></button>
@@ -140,14 +145,11 @@
                     <input id="send-amount" type="number" placeholder="0.00" class="w-full text-5xl font-black bg-transparent outline-none text-indigo-600 text-center">
                 </div>
                 <input id="send-target" type="text" placeholder="NX-XXXX" class="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-600 font-black text-center text-xl uppercase">
-                <div id="send-error" class="hidden p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold items-center gap-2">
-                    <i data-lucide="alert-triangle"></i> رصيدك غير كافٍ للعملية والرسوم
-                </div>
                 <button id="btn-send-final" onclick="askPin(() => processTransfer())" class="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black shadow-lg flex items-center justify-center gap-3 transition">تأكيد التحويل بأمان</button>
             </div>
         </div>
 
-        <!-- View Withdraw -->
+        <!-- View: Withdraw -->
         <div id="view-withdraw" class="hidden p-6 space-y-6 animate-slideUp">
             <header class="flex items-center gap-4">
                 <button onclick="switchTab('home')" class="p-2 bg-slate-100 rounded-xl"><i data-lucide="chevron-right"></i></button>
@@ -159,9 +161,6 @@
                     <input id="withdraw-amount" type="number" placeholder="0" class="w-full text-5xl font-black bg-transparent outline-none text-rose-600 text-center">
                 </div>
                 <input id="withdraw-phone" type="text" placeholder="رقم المحفظة" class="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-rose-500 font-bold text-center text-xl">
-                <div id="withdraw-error" class="hidden p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold items-center gap-2">
-                    <i data-lucide="alert-triangle"></i> الرصيد لا يغطي المبلغ والرسوم
-                </div>
                 <button id="btn-withdraw-final" onclick="askPin(() => processWithdraw())" class="w-full py-5 bg-rose-600 text-white rounded-2xl font-black shadow-lg">طلب سحب فوري</button>
             </div>
         </div>
@@ -180,7 +179,7 @@
     </div>
 
     <script>
-        // --- Firebase Initialization ---
+        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyCWyQfMmzp41jTYV4GXFViV2wMMTIiP8XU",
             authDomain: "wallet-52a17.firebaseapp.com",
@@ -202,7 +201,7 @@
         let isSettingPin = false;
         let balanceVisible = true;
 
-        // --- Auth State ---
+        // --- Auth & Initial Listeners ---
         auth.onAuthStateChanged(async user => {
             document.getElementById('loading-screen').classList.add('hidden');
             if (user) {
@@ -226,7 +225,8 @@
                 if (doc.exists) {
                     currentUserData = doc.data();
                     updateUI();
-                    if (!currentUserData.pin) {
+                    // Show Set PIN modal only if it's not already visible and PIN is empty
+                    if (!currentUserData.pin && !isSettingPin) {
                         isSettingPin = true;
                         openPinModal("إعداد رمز PIN جديد");
                     }
@@ -250,7 +250,10 @@
               .limit(10)
               .onSnapshot(snap => {
                   const list = document.getElementById('transactions-list');
-                  if(snap.empty) return;
+                  if(snap.empty) {
+                      list.innerHTML = `<p class="text-slate-400 text-sm text-center py-10">لا توجد عمليات بعد</p>`;
+                      return;
+                  }
                   list.innerHTML = snap.docs.map(d => {
                       const tx = d.data();
                       const isMinus = tx.type !== 'transfer' || tx.participants[0] === uid;
@@ -266,22 +269,18 @@
                                 </div>
                             </div>
                             <span class="font-black text-sm">${tx.amount} ج.م</span>
-                        </div>
-                      `;
+                        </div>`;
                   }).join('');
                   lucide.createIcons();
-              });
+              }, err => console.log(err));
         }
 
-        // --- Logic & Security ---
+        // --- Core Functions ---
 
         async function processTransfer() {
             const amount = parseFloat(document.getElementById('send-amount').value);
             const targetId = document.getElementById('send-target').value.toUpperCase();
-            const fee = 1;
-            const total = amount + fee;
-
-            if (isNaN(amount) || amount <= 0) return showToast("أدخل مبلغاً صحيحاً", "error");
+            if (isNaN(amount) || amount <= 0 || !targetId) return showToast("أكمل البيانات", "error");
             
             toggleProcessing(true);
             try {
@@ -292,73 +291,57 @@
                 const receiverRef = db.collection('users').doc(receiverDoc.id);
                 const senderRef = db.collection('users').doc(auth.currentUser.uid);
 
-                // النواة التقنية: runTransaction يمنع السحب بالسالب تحت أي ظرف
                 await db.runTransaction(async (transaction) => {
                     const senderSnap = await transaction.get(senderRef);
                     const receiverSnap = await transaction.get(receiverRef);
+                    const total = amount + 1;
 
-                    if (senderSnap.data().balance < total) {
-                        throw new Error("رصيدك غير كافٍ للتحويل والرسوم");
-                    }
+                    if (senderSnap.data().balance < total) throw new Error("رصيد غير كافٍ");
 
-                    transaction.update(senderRef, {
-                        balance: Number((senderSnap.data().balance - total).toFixed(2))
-                    });
-
-                    transaction.update(receiverRef, {
-                        balance: Number((receiverSnap.data().balance + amount).toFixed(2))
-                    });
+                    transaction.update(senderRef, { balance: Number((senderSnap.data().balance - total).toFixed(2)) });
+                    transaction.update(receiverRef, { balance: Number((receiverSnap.data().balance + amount).toFixed(2)) });
                 });
 
                 await db.collection('transactions').add({
-                    type: 'transfer',
-                    amount: amount,
-                    details: `تحويل إلى ${targetId}`,
+                    type: 'transfer', amount, details: `تحويل إلى ${targetId}`,
                     participants: [auth.currentUser.uid, receiverDoc.id],
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 showToast("تم التحويل بنجاح");
                 switchTab('home');
-            } catch (err) {
-                showToast(err.message, "error");
-            }
+                document.getElementById('send-amount').value = "";
+                document.getElementById('send-target').value = "";
+            } catch (err) { showToast(err.message, "error"); }
             toggleProcessing(false);
         }
 
         async function processWithdraw() {
             const amount = parseFloat(document.getElementById('withdraw-amount').value);
             const phone = document.getElementById('withdraw-phone').value;
-            const fee = Math.max(2, amount * 0.01);
-            const total = amount + fee;
-
-            if (isNaN(amount) || amount <= 0 || phone.length < 11) return showToast("بيانات غير صحيحة", "error");
+            if (isNaN(amount) || amount <= 0 || phone.length < 11) return showToast("بيانات ناقصة", "error");
 
             toggleProcessing(true);
             try {
                 const senderRef = db.collection('users').doc(auth.currentUser.uid);
+                const fee = Math.max(2, amount * 0.01);
 
                 await db.runTransaction(async (t) => {
                     const snap = await t.get(senderRef);
-                    if (snap.data().balance < total) throw new Error("رصيد غير كافٍ");
-                    t.update(senderRef, { balance: Number((snap.data().balance - total).toFixed(2)) });
+                    if (snap.data().balance < (amount + fee)) throw new Error("رصيد غير كافٍ");
+                    t.update(senderRef, { balance: Number((snap.data().balance - (amount + fee)).toFixed(2)) });
                 });
 
                 await db.collection('transactions').add({
-                    type: 'withdraw',
-                    amount: amount,
-                    details: `سحب كاش لرقم ${phone}`,
+                    type: 'withdraw', amount, details: `سحب كاش لرقم ${phone}`,
                     participants: [auth.currentUser.uid],
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 showToast("تم خصم الرصيد");
-                const msg = `سحب Nylix\nالمبلغ: ${amount}\nالرقم: ${phone}`;
-                window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+                window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent('سحب نايليكس: ' + amount + ' رقم: ' + phone)}`, '_blank');
                 switchTab('home');
-            } catch (err) {
-                showToast(err.message, "error");
-            }
+            } catch (err) { showToast(err.message, "error"); }
             toggleProcessing(false);
         }
 
@@ -371,73 +354,17 @@
             try {
                 const q = await db.collection('users').where('email', '==', email).get();
                 if(q.empty) throw new Error("المستخدم غير موجود");
-                const userDoc = q.docs[0];
-                await db.collection('users').doc(userDoc.id).update({
+                await db.collection('users').doc(q.docs[0].id).update({
                     balance: firebase.firestore.FieldValue.increment(amount)
                 });
-                showToast("تم الشحن بنجاح");
+                showToast("تم الشحن");
                 document.getElementById('admin-email').value = "";
                 document.getElementById('admin-amount').value = "";
             } catch(e) { showToast(e.message, "error"); }
             toggleProcessing(false);
         }
 
-        // --- UI Utils ---
-
-        function updateUI() {
-            if(!currentUserData) return;
-            document.getElementById('display-nylix-id').innerText = currentUserData.nylixId;
-            const balText = balanceVisible ? currentUserData.balance.toFixed(2) : "••••";
-            document.getElementById('balance-text').innerHTML = `${balText} <span class="text-lg font-medium opacity-70">ج.م</span>`;
-            
-            // Live validation on inputs
-            const sendAmt = parseFloat(document.getElementById('send-amount').value);
-            const withAmt = parseFloat(document.getElementById('withdraw-amount').value);
-            
-            if(sendAmt && (sendAmt + 1) > currentUserData.balance) {
-                document.getElementById('send-error').classList.remove('hidden');
-                document.getElementById('btn-send-final').classList.replace('bg-indigo-600', 'bg-slate-200');
-                document.getElementById('btn-send-final').classList.add('text-slate-400');
-            } else {
-                document.getElementById('send-error').classList.add('hidden');
-                document.getElementById('btn-send-final').classList.replace('bg-slate-200', 'bg-indigo-600');
-                document.getElementById('btn-send-final').classList.remove('text-slate-400');
-            }
-        }
-
-        function switchTab(tabId) {
-            ['home', 'send', 'withdraw'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-icon').forEach(n => {
-                n.classList.remove('text-indigo-600');
-                n.classList.add('text-slate-300');
-                if(n.dataset.tab === tabId) n.classList.replace('text-slate-300', 'text-indigo-600');
-            });
-            updateUI();
-        }
-
-        function toggleBalance() {
-            balanceVisible = !balanceVisible;
-            updateUI();
-            const icon = document.getElementById('eye-icon');
-            icon.setAttribute('data-lucide', balanceVisible ? 'eye' : 'eye-off');
-            lucide.createIcons();
-        }
-
-        // --- Auth & PIN Handlers ---
-
-        async function handleAuth() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-password').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } catch (e) {
-                try {
-                    await auth.createUserWithEmailAndPassword(email, pass);
-                } catch(err) { showToast(err.message, "error"); }
-            }
-        }
+        // --- PIN Logic (FIXED) ---
 
         function pressPin(n) {
             if(pinBuffer.length < 6) {
@@ -454,26 +381,28 @@
         function renderPinDots() {
             const dots = document.getElementById('pin-dots').children;
             for(let i=0; i<6; i++) {
-                dots[i].className = `w-4 h-4 rounded-full transition-all ${pinBuffer.length > i ? 'bg-indigo-600 scale-125' : 'bg-slate-200'}`;
+                dots[i].className = `w-4 h-4 rounded-full transition-all ${pinBuffer.length > i ? 'bg-indigo-600 scale-125 shadow-sm' : 'bg-slate-200'}`;
             }
         }
 
         function askPin(action) {
             activePinAction = action;
+            isSettingPin = false; // Just to be sure it's validation mode
             openPinModal("أدخل رمز PIN للتأكيد");
         }
 
         function openPinModal(title) {
+            pinBuffer = "";
             document.getElementById('pin-title').innerText = title;
             document.getElementById('pin-modal').classList.remove('hidden');
             document.getElementById('pin-cancel').classList.toggle('hidden', isSettingPin);
-            pinBuffer = "";
             renderPinDots();
         }
 
         function closePinModal() {
             document.getElementById('pin-modal').classList.add('hidden');
             pinBuffer = "";
+            activePinAction = null;
         }
 
         async function confirmPinAction() {
@@ -498,6 +427,34 @@
             }
         }
 
+        // --- UI Helpers ---
+
+        function updateUI() {
+            if(!currentUserData) return;
+            document.getElementById('display-nylix-id').innerText = currentUserData.nylixId;
+            const bal = balanceVisible ? currentUserData.balance.toFixed(2) : "••••";
+            document.getElementById('balance-text').innerHTML = `${bal} <span class="text-lg font-medium opacity-70">ج.م</span>`;
+        }
+
+        function switchTab(tabId) {
+            ['home', 'send', 'withdraw'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-icon').forEach(n => {
+                n.classList.remove('text-indigo-600');
+                n.classList.add('text-slate-300');
+                if(n.dataset.tab === tabId) n.classList.replace('text-slate-300', 'text-indigo-600');
+            });
+            lucide.createIcons();
+        }
+
+        function toggleBalance() {
+            balanceVisible = !balanceVisible;
+            updateUI();
+            const icon = document.getElementById('eye-icon');
+            icon.setAttribute('data-lucide', balanceVisible ? 'eye' : 'eye-off');
+            lucide.createIcons();
+        }
+
         function toggleProcessing(show) {
             document.getElementById('processing-overlay').classList.toggle('hidden', !show);
         }
@@ -511,23 +468,28 @@
             setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-password').value;
+            if(!email || !pass) return;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                try {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                } catch(err) { showToast(err.message, "error"); }
+            }
+        }
+
         function copyId() {
             const el = document.createElement('textarea');
             el.value = currentUserData.nylixId;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
+            document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
             showToast("تم نسخ الـ ID");
         }
 
-        function signOutUser() {
-            auth.signOut();
-        }
-
-        // Live Balance Validation Listeners
-        document.getElementById('send-amount').addEventListener('input', updateUI);
-        document.getElementById('withdraw-amount').addEventListener('input', updateUI);
+        function signOutUser() { auth.signOut(); }
 
     </script>
 </body>
