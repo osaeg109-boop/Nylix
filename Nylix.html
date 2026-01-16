@@ -6,7 +6,6 @@
     <title>Nylix Wallet Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -50,7 +49,7 @@
         </div>
     </div>
 
-    <!-- نافذة الـ PIN (المصلحة) -->
+    <!-- نافذة الـ PIN -->
     <div id="pin-modal" class="fixed inset-0 z-[200] bg-white hidden flex flex-col items-center justify-center p-8">
         <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6"><i data-lucide="lock"></i></div>
         <h2 id="pin-title" class="text-2xl font-black mb-2">تأكيد الهوية</h2>
@@ -80,9 +79,23 @@
             <button id="pin-cancel-btn" onclick="closePinModal()" class="flex-1 py-4 bg-slate-100 rounded-2xl font-black">إلغاء</button>
             <button onclick="confirmPinAction()" class="flex-2 py-4 bg-indigo-600 text-white rounded-2xl font-black flex-grow">تأكيد</button>
         </div>
+        <button onclick="showResetPinWithPassword()" class="mt-6 text-indigo-600 font-bold text-sm">نسيت رمز PIN؟</button>
     </div>
 
-    <!-- محتوى التطبيق الرئيسي -->
+    <!-- نافذة إعادة التعيين بكلمة المرور -->
+    <div id="reset-pin-modal" class="fixed inset-0 z-[210] bg-white hidden flex flex-col items-center justify-center p-8 animate-slideUp">
+        <div class="w-full max-w-xs space-y-6">
+            <h2 class="text-2xl font-black text-center">إعادة تعيين PIN</h2>
+            <p class="text-slate-500 text-center text-sm">أدخل كلمة مرور حسابك للمتابعة</p>
+            <input id="reset-account-password" type="password" placeholder="كلمة مرور الحساب" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-600">
+            <div class="flex gap-4">
+                <button onclick="hideResetPinWithPassword()" class="flex-1 py-4 bg-slate-100 rounded-2xl font-black">إلغاء</button>
+                <button onclick="verifyPasswordAndResetPin()" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black">تحقق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- محتوى التطبيق -->
     <div id="app-content" class="hidden max-w-md mx-auto min-h-screen bg-white shadow-2xl relative pb-24 overflow-hidden">
         
         <!-- الصفحة الرئيسية -->
@@ -114,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- لوحة المدير -->
             <div id="admin-panel" class="hidden bg-amber-50 p-6 rounded-3xl border border-amber-200">
                 <h3 class="text-amber-800 font-black text-sm mb-4 flex items-center gap-2"><i data-lucide="shield-check"></i> شحن الرصيد</h3>
                 <div class="space-y-3">
@@ -164,7 +176,6 @@
             </div>
         </div>
 
-        <!-- شريط التنقل السفلي -->
         <nav class="absolute bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-slate-100 px-10 py-5 flex justify-between items-center z-[90]">
             <button onclick="switchTab('home')" class="nav-icon text-indigo-600" data-tab="home"><i data-lucide="home" size="28"></i></button>
             <button onclick="switchTab('send')" class="nav-icon text-slate-300" data-tab="send"><i data-lucide="send" size="28" style="transform: rotate(180deg)"></i></button>
@@ -178,7 +189,6 @@
     </div>
 
     <script>
-        // --- إعدادات Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyCWyQfMmzp41jTYV4GXFViV2wMMTIiP8XU",
             authDomain: "wallet-52a17.firebaseapp.com",
@@ -200,7 +210,6 @@
         let isSettingPinMode = false;
         let balanceVisible = true;
 
-        // --- مراقبة حالة المصادقة ---
         auth.onAuthStateChanged(async user => {
             document.getElementById('loading-screen').classList.add('hidden');
             if (user) {
@@ -223,7 +232,6 @@
                 if (doc.exists) {
                     currentUserData = doc.data();
                     updateUI();
-                    // إذا لم يكن لديه PIN، نفتح نافذة الإعداد فوراً
                     if (!currentUserData.pin && !isSettingPinMode) {
                         isSettingPinMode = true;
                         openPinModal("إعداد رمز PIN جديد");
@@ -248,7 +256,10 @@
               .limit(10)
               .onSnapshot(snap => {
                   const list = document.getElementById('transactions-list');
-                  if(snap.empty) return;
+                  if(snap.empty) {
+                      list.innerHTML = '<p class="text-slate-400 text-sm text-center py-10">لا توجد عمليات بعد</p>';
+                      return;
+                  }
                   list.innerHTML = snap.docs.map(d => {
                       const tx = d.data();
                       const isMinus = tx.type !== 'transfer' || tx.participants[0] === uid;
@@ -264,17 +275,42 @@
                         </div>`;
                   }).join('');
                   lucide.createIcons();
-              });
+              }, err => console.log(err));
         }
 
-        // --- المنطق البرمجي للعمليات ---
+        // --- ميزة إعادة تعيين PIN ---
+        function showResetPinWithPassword() {
+            document.getElementById('reset-pin-modal').classList.remove('hidden');
+        }
 
+        function hideResetPinWithPassword() {
+            document.getElementById('reset-pin-modal').classList.add('hidden');
+            document.getElementById('reset-account-password').value = "";
+        }
+
+        async function verifyPasswordAndResetPin() {
+            const password = document.getElementById('reset-account-password').value;
+            if(!password) return showToast("أدخل كلمة المرور أولاً", "error");
+
+            toggleProcessing(true);
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, password);
+                await auth.currentUser.reauthenticateWithCredential(credential);
+                
+                hideResetPinWithPassword();
+                isSettingPinMode = true;
+                openPinModal("أدخل رمز PIN الجديد");
+                showToast("تم التحقق، يمكنك تغيير الرمز الآن");
+            } catch (err) {
+                showToast("كلمة مرور الحساب غير صحيحة", "error");
+            }
+            toggleProcessing(false);
+        }
+
+        // --- العمليات الرئيسية ---
         async function processTransfer() {
-            const amountInput = document.getElementById('send-amount');
-            const targetInput = document.getElementById('send-target');
-            const amount = parseFloat(amountInput.value);
-            const targetId = targetInput.value.toUpperCase();
-            
+            const amount = parseFloat(document.getElementById('send-amount').value);
+            const targetId = document.getElementById('send-target').value.toUpperCase();
             if (isNaN(amount) || amount <= 0) return showToast("أدخل مبلغاً صحيحاً", "error");
             
             toggleProcessing(true);
@@ -287,8 +323,8 @@
 
                 await db.runTransaction(async (transaction) => {
                     const s = await transaction.get(senderRef);
-                    const totalCost = amount + 1; // 1 جنيه رسوم
-                    if (s.data().balance < totalCost) throw new Error("رصيد غير كافٍ (المبلغ + 1 ج رسوم)");
+                    const totalCost = amount + 1;
+                    if (s.data().balance < totalCost) throw new Error("رصيد غير كافٍ");
                     
                     transaction.update(senderRef, { balance: Number((s.data().balance - totalCost).toFixed(2)) });
                     transaction.update(receiverRef, { balance: firebase.firestore.FieldValue.increment(amount) });
@@ -301,18 +337,14 @@
                 });
 
                 showToast("تم التحويل بنجاح");
-                amountInput.value = ""; targetInput.value = "";
                 switchTab('home');
             } catch (err) { showToast(err.message, "error"); }
             toggleProcessing(false);
         }
 
         async function processWithdraw() {
-            const amountInput = document.getElementById('withdraw-amount');
-            const phoneInput = document.getElementById('withdraw-phone');
-            const amount = parseFloat(amountInput.value);
-            const phone = phoneInput.value;
-            
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const phone = document.getElementById('withdraw-phone').value;
             if (isNaN(amount) || amount <= 0) return showToast("بيانات خاطئة", "error");
 
             toggleProcessing(true);
@@ -330,7 +362,6 @@
                 });
                 window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=طلب سحب نايليكس بقيمة ${amount} جنيه لرقم المحفظة: ${phone}`, '_blank');
                 showToast("تم خصم الرصيد بنجاح");
-                amountInput.value = ""; phoneInput.value = "";
                 switchTab('home');
             } catch (err) { showToast(err.message, "error"); }
             toggleProcessing(false);
@@ -345,15 +376,12 @@
                     balance: firebase.firestore.FieldValue.increment(amount) 
                 });
                 showToast("تم شحن الرصيد للعميل");
-                document.getElementById('admin-email').value = "";
-                document.getElementById('admin-amount').value = "";
             } else {
                 showToast("المستخدم غير موجود", "error");
             }
         }
 
-        // --- المنطق المصلح للـ PIN والتأكيد ---
-
+        // --- منطق PIN ---
         function pressPin(n) {
             if(pinBuffer.length < 6) {
                 pinBuffer += n;
@@ -369,7 +397,7 @@
         function renderPinDots() {
             const dots = document.getElementById('pin-dots').children;
             for(let i=0; i<6; i++) {
-                dots[i].className = `w-4 h-4 rounded-full transition-all ${pinBuffer.length > i ? 'bg-indigo-600 scale-125 shadow-sm' : 'bg-slate-200'}`;
+                dots[i].className = `w-4 h-4 rounded-full transition-all ${pinBuffer.length > i ? 'bg-indigo-600 scale-125' : 'bg-slate-200'}`;
             }
         }
 
@@ -383,54 +411,42 @@
             pinBuffer = "";
             document.getElementById('pin-title').innerText = title;
             document.getElementById('pin-modal').classList.remove('hidden');
-            // إخفاء زر الإلغاء إذا كان إعداداً إجبارياً لأول مرة
-            document.getElementById('pin-cancel-btn').style.display = isSettingPinMode ? "none" : "block";
+            document.getElementById('pin-cancel-btn').style.display = (isSettingPinMode && !currentUserData.pin) ? "none" : "block";
             renderPinDots();
         }
 
         function closePinModal() {
-            if (isSettingPinMode) return; // منع الإغلاق إذا كان يجب إعداد الرمز
+            if (isSettingPinMode && !currentUserData.pin) return;
             document.getElementById('pin-modal').classList.add('hidden');
             pinBuffer = "";
-            activePinAction = null;
         }
 
-        // دالة التأكيد المصلحة
         async function confirmPinAction() {
-            if(pinBuffer.length < 6) {
-                showToast("أكمل الـ 6 أرقام أولاً", "error");
-                return;
-            }
+            if(pinBuffer.length < 6) return showToast("أدخل 6 أرقام", "error");
 
             if(isSettingPinMode) {
-                // حالة إعداد PIN جديد لأول مرة
                 try {
                     toggleProcessing(true);
                     await db.collection('users').doc(auth.currentUser.uid).update({ pin: pinBuffer });
                     isSettingPinMode = false;
                     showToast("تم حفظ رمز PIN بنجاح");
                     closePinModal();
-                } catch (e) {
-                    showToast("خطأ في حفظ الرمز", "error");
-                } finally {
-                    toggleProcessing(false);
-                }
+                } catch (e) { showToast("خطأ في الحفظ", "error"); }
+                finally { toggleProcessing(false); }
             } else {
-                // حالة التأكيد لعملية (تحويل أو سحب)
                 if(pinBuffer === currentUserData.pin) {
-                    const actionToExecute = activePinAction;
-                    closePinModal(); // إغلاق النافذة أولاً
-                    if(actionToExecute) actionToExecute(); // تنفيذ العملية المطلوبة
+                    const action = activePinAction;
+                    closePinModal();
+                    if(action) action();
                 } else {
-                    showToast("رمز PIN خاطئ.. حاول مجدداً", "error");
+                    showToast("رمز PIN خاطئ", "error");
                     pinBuffer = "";
                     renderPinDots();
                 }
             }
         }
 
-        // --- وظائف مساعدة ---
-
+        // --- وظائف الواجهة ---
         function updateUI() {
             if(!currentUserData) return;
             document.getElementById('display-nylix-id').innerText = currentUserData.nylixId;
@@ -471,24 +487,19 @@
         async function handleAuth() {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-password').value;
-            if(!email || !pass) return showToast("أكمل بريدك وكلمة المرور", "error");
+            if(!email || !pass) return showToast("أكمل البيانات", "error");
             try { 
                 await auth.signInWithEmailAndPassword(email, pass); 
             } catch { 
                 try {
                     await auth.createUserWithEmailAndPassword(email, pass);
-                } catch(err) { showToast("فشل التسجيل: " + err.message, "error"); }
+                } catch(err) { showToast("فشل: " + err.message, "error"); }
             }
         }
 
         function copyId() {
-            const temp = document.createElement("input");
-            temp.value = currentUserData.nylixId;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand("copy");
-            document.body.removeChild(temp);
-            showToast("تم نسخ الـ ID بنجاح");
+            navigator.clipboard.writeText(currentUserData.nylixId);
+            showToast("تم نسخ الـ ID");
         }
 
         function signOutUser() { auth.signOut(); }
